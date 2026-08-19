@@ -1,0 +1,41 @@
+name: Build DSH packages (dev.lwff.dsh prefix)
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Space-separated packages to build"
+        default: "proot apt dpkg"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    env:
+      TERMUX_PACKAGE_NAME: dev.lwff.dsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build docker image
+        run: |
+          docker build -t ghcr.io/termux/package-builder:latest scripts/
+
+      - name: Build packages
+        run: |
+          ./scripts/run-docker.sh true
+          packages="${{ inputs.packages }}"
+          for pkg in $packages; do
+            echo "=== Building $pkg ==="
+            ./build-package.sh -a aarch64 "$pkg"
+          done
+
+      - name: Upload debs
+        uses: actions/upload-artifact@v6
+        with:
+          name: dsh-debs
+          path: output/*.deb
+          retention-days: 30
