@@ -29,12 +29,25 @@ jobs:
         run: |
           ./scripts/run-docker.sh true
 
+      - name: Pre-cache termux-elf-cleaner
+        run: |
+          mkdir -p $HOME/.termux-build/_cache
+          for i in 1 2 3 4 5; do
+            curl -fL --retry 5 --max-time 120 \
+              -o $HOME/.termux-build/_cache/termux-elf-cleaner \
+              https://github.com/termux/termux-elf-cleaner/releases/download/v3.0.1/termux-elf-cleaner \
+              && break
+            echo "retry $i"; sleep 5
+          done
+          chmod +x $HOME/.termux-build/_cache/termux-elf-cleaner
+          ls -la $HOME/.termux-build/_cache/
+
       - name: Build packages
         run: |
           packages="${{ inputs.packages }}"
           for pkg in $packages; do
             echo "=== Building $pkg ==="
-            ./scripts/run-docker.sh ./build-package.sh -I -C -a aarch64 "$pkg"
+            ./scripts/run-docker.sh -m ./build-package.sh -I -C -a aarch64 "$pkg"
           done
 
       - name: Upload debs
