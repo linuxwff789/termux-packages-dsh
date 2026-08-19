@@ -18,6 +18,8 @@ export PROOT_UNBUNDLE_LOADER=$TERMUX_PREFIX/libexec/proot
 
 termux_step_pre_configure() {
 	CPPFLAGS+=" -DARG_MAX=131072 -DVERSION=\\\"${TERMUX_PKG_VERSION}\\\""
+	# libtalloc headers must be findable even when built standalone
+	CPPFLAGS+=" -I$TERMUX_PREFIX/include"
 }
 
 termux_step_post_make_install() {
