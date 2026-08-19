@@ -11,10 +11,10 @@ TERMUX_PKG_SRCURL=https://github.com/termux/proot/archive/v${TERMUX_PKG_VERSION}
 TERMUX_PKG_SHA256=SKIP
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_UPDATE_TAG_TYPE="newest-tag"
-TERMUX_PKG_DEPENDS="libandroid-shmem"
+TERMUX_PKG_DEPENDS="termux-licenses"
 TERMUX_PKG_SUGGESTS="proot-distro"
 TERMUX_PKG_BUILD_IN_SRC=true
-TERMUX_PKG_EXTRA_MAKE_ARGS="-C src PROOT_WITH_LIBANDROID_SHMEM=true proot loader/loader"
+TERMUX_PKG_EXTRA_MAKE_ARGS="-C src proot loader/loader"
 
 # No PROOT_UNBUNDLE_LOADER: we do NOT bake a package-specific loader path
 # into the binary. The loader ships as a separate ELF (libproot-loader.so)
