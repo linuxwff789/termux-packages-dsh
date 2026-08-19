@@ -25,12 +25,16 @@ jobs:
           docker build -t ghcr.io/termux/package-builder:latest scripts/
           docker buildx prune -af
 
+      - name: Start container
+        run: |
+          ./scripts/run-docker.sh true
+
       - name: Build packages
         run: |
           packages="${{ inputs.packages }}"
           for pkg in $packages; do
             echo "=== Building $pkg ==="
-            ./scripts/run-docker.sh true ./build-package.sh -a aarch64 "$pkg"
+            ./scripts/run-docker.sh ./build-package.sh -I -C -a aarch64 "$pkg"
           done
 
       - name: Upload debs
