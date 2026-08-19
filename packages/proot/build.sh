@@ -7,17 +7,20 @@ TERMUX_PKG_DESCRIPTION="Emulate chroot, bind mount and binfmt_misc for non-root 
 TERMUX_PKG_LICENSE="GPL-2.0"
 TERMUX_PKG_MAINTAINER="Michal Bednarski @michalbednarski"
 TERMUX_PKG_VERSION="5.1.107.91"
-TERMUX_PKG_SRCURL=https://github.com/linuxwff789/proot-dsh/archive/master.zip
+TERMUX_PKG_SRCURL=https://github.com/termux/proot/archive/v${TERMUX_PKG_VERSION}.zip
 TERMUX_PKG_SHA256=SKIP
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_UPDATE_TAG_TYPE="newest-tag"
 TERMUX_PKG_DEPENDS="libandroid-shmem"
 TERMUX_PKG_SUGGESTS="proot-distro"
 TERMUX_PKG_BUILD_IN_SRC=true
-TERMUX_PKG_EXTRA_MAKE_ARGS="-C src PROOT_WITH_LIBANDROID_SHMEM=true"
+TERMUX_PKG_EXTRA_MAKE_ARGS="-C src PROOT_WITH_LIBANDROID_SHMEM=true proot loader/loader"
 
-# Install loader in libexec instead of extracting it every time
-export PROOT_UNBUNDLE_LOADER=$TERMUX_PREFIX/libexec/proot
+# No PROOT_UNBUNDLE_LOADER: we do NOT bake a package-specific loader path
+# into the binary. The loader ships as a separate ELF (libproot-loader.so)
+# that any host app installs into its nativeLibraryDir and points at via the
+# PROOT_LOADER env var at runtime. This keeps the build package-name
+# agnostic, so the same proot binary works under any fork/app package name.
 
 # Standalone replace.h shim for talloc (Samba compat, minimal).
 termux_step_get_source() {
@@ -84,4 +87,20 @@ termux_step_post_make_install() {
 		$TERMUX_PKG_BUILDER_DIR/termux-chroot \
 		> $TERMUX_PREFIX/bin/termux-chroot
 	chmod 700 $TERMUX_PREFIX/bin/termux-chroot
+
+	# Install package-name-agnostic artifacts for host apps:
+	#   libproot.so          -> proot binary (rename so APK installs it into
+	#                           nativeLibraryDir where SELinux allows exec)
+	#   libproot-loader.so   -> 64-bit loader ELF (same reason)
+	#   libproot-loader32.so -> 32-bit loader ELF (same reason)
+	# Host app must set PROOT_LOADER / PROOT_LOADER_32 to its own
+	# nativeLibraryDir paths at runtime. No package path is baked in.
+	mkdir -p $TERMUX_PREFIX/lib/proot
+	install -m755 $TERMUX_PKG_SRCDIR/src/proot $TERMUX_PREFIX/lib/proot/libproot.so
+	if [ -f $TERMUX_PKG_SRCDIR/src/loader/loader ]; then
+		install -m755 $TERMUX_PKG_SRCDIR/src/loader/loader $TERMUX_PREFIX/lib/proot/libproot-loader.so
+	fi
+	if [ -f $TERMUX_PKG_SRCDIR/src/loader/loader-m32 ]; then
+		install -m755 $TERMUX_PKG_SRCDIR/src/loader/loader-m32 $TERMUX_PREFIX/lib/proot/libproot-loader32.so
+	fi
 }

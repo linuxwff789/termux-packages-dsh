@@ -1,0 +1,8 @@
+--- a/src/GNUmakefile
++++ b/src/GNUmakefile
+@@ -19,7 +19,7 @@ STRIP    ?= $(CROSS_COMPILE)strip
+ OBJCOPY  ?= $(CROSS_COMPILE)objcopy
+ OBJDUMP  ?= $(CROSS_COMPILE)objdump
+ 
+-LDFLAGS  += -ltalloc -Wl,-z,noexecstack
++LDFLAGS  += $(if $(TALLOC_LIBS),$(TALLOC_LIBS),-ltalloc) -Wl,-z,noexecstack
