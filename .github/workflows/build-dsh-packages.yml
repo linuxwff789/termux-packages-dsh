@@ -5,7 +5,7 @@ on:
     inputs:
       packages:
         description: "Space-separated packages to build"
-        default: "proot apt dpkg"
+        default: "proot apt dpkg bash"
         required: false
 
 permissions:

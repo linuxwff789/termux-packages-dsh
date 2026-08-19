@@ -1,0 +1,51 @@
+--- a/shell.c
++++ b/shell.c
+@@ -1117,7 +1117,25 @@
+ static void
+ execute_profile_file (void)
+ {
+-  maybe_execute_file (SYS_PROFILE, 1);
++  /* DSH fork: resolve the system profile at RUNTIME from $PREFIX so the
++     same binary works under any app package name. The stock termux build
++     bakes /data/data/com.termux/files/usr/etc/profile (its sysconfdir)
++     into the binary; under a renamed package that path belongs to another
++     app's private dir and SELinux denies read access, aborting every
++     login shell with "Permission denied". With $PREFIX set (injected by
++     TermuxShellEnvironment) we source $PREFIX/etc/profile instead. */
++  const char *prefix = getenv ("PREFIX");
++  char *sys_profile;
++  if (prefix && *prefix)
++    {
++      sys_profile = xmalloc (strlen (prefix) + 16);
++      sprintf (sys_profile, "%s/etc/profile", prefix);
++    }
++  else
++    sys_profile = SYS_PROFILE;
++  maybe_execute_file (sys_profile, 1);
++  if (sys_profile != SYS_PROFILE)
++    free (sys_profile);
+ 
+   if (act_like_sh)	/* sh */
+     maybe_execute_file ("~/.profile", 1);
+@@ -1133,7 +1151,21 @@
+ #  if defined (__OPENNT)
+   maybe_execute_file (_prefixInstallPath(SYS_BASHRC, NULL, 0), 1);
+ #  else
+-  maybe_execute_file (SYS_BASHRC, 1);
++  {
++    /* DSH fork: same $PREFIX runtime resolution for the system bashrc. */
++    const char *prefix = getenv ("PREFIX");
++    char *sys_bashrc;
++    if (prefix && *prefix)
++      {
++        sys_bashrc = xmalloc (strlen (prefix) + 20);
++        sprintf (sys_bashrc, "%s/etc/bash.bashrc", prefix);
++      }
++    else
++      sys_bashrc = SYS_BASHRC;
++    maybe_execute_file (sys_bashrc, 1);
++    if (sys_bashrc != SYS_BASHRC)
++      free (sys_bashrc);
++  }
+ #  endif
+ #endif
