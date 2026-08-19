@@ -57,8 +57,12 @@ termux_step_get_dependencies() {
 					cd "$TERMUX_COMMON_CACHEDIR-$DEP_ARCH"
 					if [[ "$TERMUX_REPO_PKG_FORMAT" == "debian" ]]; then
 						# Ignore topdir `.`, to avoid possible  permission errors from tar
+						# DSH fork: official repo debs carry /data/data/com.termux paths baked
+						# in; redirect them to this fork's data dir so dependencies land in
+						# $TERMUX_PREFIX where the build's -L/-I flags expect them.
 						ar p "${PKG}_${DEP_VERSION}_${DEP_ARCH}.deb" "data.tar.xz" | \
-							tar xJ --no-overwrite-dir --transform='s#^.$#data#' -C /
+							tar xJ --no-overwrite-dir --transform='s#^.$#data#' \
+								--transform="s#data/data/com.termux#${TERMUX_APP__DATA_DIR#/}#" -C /
 					elif [[ "$TERMUX_REPO_PKG_FORMAT" == "pacman" ]]; then
 						tar -xJf "${PKG}-${DEP_VERSION_PAC}-${DEP_ARCH}.pkg.tar.xz" \
 							--anchored --exclude=.{BUILDINFO,PKGINFO,MTREE,INSTALL} \
