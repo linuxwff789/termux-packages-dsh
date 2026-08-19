@@ -47,7 +47,11 @@ jobs:
           packages="${{ inputs.packages }}"
           for pkg in $packages; do
             echo "=== Building $pkg ==="
-            ./scripts/run-docker.sh -m ./build-package.sh -I -C -a aarch64 "$pkg"
+            if ! ./scripts/run-docker.sh -m ./build-package.sh -I -C -a aarch64 "$pkg"; then
+              echo "=== BUILD FAILED: $pkg — dumping config.log ==="
+              ./scripts/run-docker.sh -m "bash -c 'tail -60 /home/builder/.termux-build/${pkg}/src/config.log 2>/dev/null || find /home/builder/.termux-build -name config.log | head -3'" || true
+              exit 1
+            fi
           done
 
       - name: Upload debs
